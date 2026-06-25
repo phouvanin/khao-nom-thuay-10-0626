@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<title>ໂປຣ ເຂົ້າໜົມຖ້ວຍ ຄູ່ 10,000ກີບ — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --cream:#FBF1F3;
+    --plum:#5C2A3A;
+    --berry:#C75B7A;
+    --berry-deep:#9E3F5A;
+    --berry-light:#F3CBD8;
+    --pistachio:#9CB87A;
+    --line:#EFD9E0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--cream);
+    font-family:'Noto Sans Lao','Segoe UI',sans-serif;
+    color:var(--plum);
+    padding:28px 18px 60px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+  header{
+    display:flex;align-items:center;gap:18px;
+    border-bottom:3px solid var(--berry);
+    padding-bottom:18px;margin-bottom:26px;
+  }
+  .cup-icon{
+    width:54px;height:54px;border-radius:0 0 22px 22px / 0 0 30px 30px;
+    background:linear-gradient(180deg, var(--berry-light), var(--berry) 55%, var(--berry-deep));
+    flex-shrink:0;
+    box-shadow:0 3px 8px rgba(158,63,90,0.35);
+  }
+  h1{font-size:1.5rem;font-weight:800;letter-spacing:.2px;}
+  .sub{color:var(--berry-deep);font-size:.92rem;margin-top:3px;}
+  .badge{
+    margin-left:auto;background:var(--berry-deep);color:#fff;
+    font-size:.78rem;padding:6px 14px;border-radius:20px;font-weight:600;
+  }
+
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:30px;}
+  @media (max-width:760px){.cards{grid-template-columns:repeat(2,1fr);}}
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:14px;
+    padding:18px 18px 16px;position:relative;overflow:hidden;
+  }
+  .card::before{
+    content:"";position:absolute;top:0;left:0;width:5px;height:100%;
+    background:var(--berry);
+  }
+  .card .label{font-size:.78rem;color:var(--berry-deep);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+  .card .value{font-size:1.7rem;font-weight:800;margin-top:6px;color:var(--plum);}
+  .card .note{font-size:.78rem;color:#a87487;margin-top:4px;}
+
+  .panel{
+    background:#fff;border:1px solid var(--line);border-radius:16px;
+    padding:22px;margin-bottom:24px;
+  }
+  .panel h2{font-size:1.05rem;font-weight:700;margin-bottom:14px;color:var(--plum);}
+  .chart-box{height:300px;}
+
+  table{width:100%;border-collapse:collapse;font-size:.88rem;}
+  th{
+    text-align:left;color:var(--berry-deep);font-weight:700;
+    border-bottom:2px solid var(--line);padding:9px 8px;
+    font-size:.78rem;text-transform:uppercase;letter-spacing:.3px;
+  }
+  td{padding:9px 8px;border-bottom:1px solid var(--line);}
+  tr:hover td{background:#FFF5F7;}
+  .zero{color:#d9b9c2;}
+  .pill{
+    display:inline-block;padding:2px 9px;border-radius:10px;
+    background:var(--berry-light);color:var(--plum);font-weight:700;font-size:.78rem;
+  }
+  .spike{background:var(--pistachio);color:#fff;}
+  footer{text-align:center;color:#c79aa6;font-size:.78rem;margin-top:20px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="cup-icon"></div>
+    <div>
+      <h1>ໂປຣໂມຊັນ ເຂົ້າໜົມຖ້ວຍ ຄູ່ 10,000ກີບ</h1>
+      <div class="sub">ຮ້ານກ້ວຍຕ໋ຽວໄຂ່ຍ້ອນຍຸກ @ Friendship Mall · ຖ້ວຍລະ 5,000ກີບ ຊື້ຄູ່ 10,000ກີບ</div>
+    </div>
+    <div class="badge">ມິຖຸນາ 2026</div>
+  </header>
+
+  <div class="cards">
+    <div class="card">
+      <div class="label">ຍອດຂາຍທັງໝົດ</div>
+      <div class="value" id="totalQty">-</div>
+      <div class="note">ຖ້ວຍ</div>
+    </div>
+    <div class="card">
+      <div class="label">ຍອດຂາຍລວມ</div>
+      <div class="value" id="totalSales">-</div>
+      <div class="note">ກີບ</div>
+    </div>
+    <div class="card">
+      <div class="label">ສະເລ່ຍຕໍ່ວັນ</div>
+      <div class="value" id="avgQty">-</div>
+      <div class="note">ຖ້ວຍ/ວັນ (18 ວັນ)</div>
+    </div>
+    <div class="card">
+      <div class="label">ວັນທີ່ມີການຂາຍ</div>
+      <div class="value" id="activeDays">-</div>
+      <div class="note">ຈາກ 18 ວັນ</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>ຈຳນວນຖ້ວຍທີ່ຂາຍຕໍ່ວັນ</h2>
+    <div class="chart-box"><canvas id="usageChart"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <h2>ຍອດຂາຍລວມ ຕໍ່ວັນ (ກີບ)</h2>
+    <div class="chart-box"><canvas id="salesChart"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <h2>ລາຍລະອຽດແຍກຕາມວັນ</h2>
+    <table>
+      <thead>
+        <tr><th>ວັນ (ມິຖຸນາ)</th><th>ຈຳນວນຖ້ວຍ</th><th>ຄູ່ (×10,000ກີບ)</th><th>ບິນ</th><th>ຍອດຂາຍລວມ</th></tr>
+      </thead>
+      <tbody id="tblBody"></tbody>
+    </table>
+  </div>
+
+  <footer>ສ້າງຈາກໄຟລ໌ ເຂ_າຫນ_ມຖ_ວຍ_ເຊ_ດ_10_000ກ_ບ.xlsx · 1–18 ມິຖຸນາ 2026</footer>
+</div>
+
+<script>
+const data = [
+  {day:1,qty:14,total:70000,tx:6},{day:2,qty:0,total:0,tx:0},{day:3,qty:10,total:50000,tx:2},
+  {day:4,qty:12,total:60000,tx:3},{day:5,qty:8,total:40000,tx:3},{day:6,qty:14,total:70000,tx:5},
+  {day:7,qty:8,total:40000,tx:2},{day:8,qty:14,total:70000,tx:6},{day:9,qty:12,total:60000,tx:4},
+  {day:10,qty:2,total:10000,tx:1},{day:11,qty:18,total:90000,tx:4},{day:12,qty:0,total:0,tx:0},
+  {day:13,qty:16,total:80000,tx:5},{day:14,qty:18,total:90000,tx:6},{day:15,qty:30,total:150000,tx:7},
+  {day:16,qty:14,total:70000,tx:2},{day:17,qty:2,total:10000,tx:1},{day:18,qty:14,total:70000,tx:4},
+];
+
+const fmt = n => n.toLocaleString('en-US');
+const totalQty = data.reduce((a,d)=>a+d.qty,0);
+document.getElementById('totalQty').textContent = fmt(totalQty);
+document.getElementById('totalSales').textContent = fmt(data.reduce((a,d)=>a+d.total,0));
+document.getElementById('avgQty').textContent = (totalQty/data.length).toFixed(1);
+document.getElementById('activeDays').textContent = data.filter(d=>d.qty>0).length;
+
+const tbody = document.getElementById('tblBody');
+const maxQty = Math.max(...data.map(d=>d.qty));
+data.forEach(d=>{
+  const tr = document.createElement('tr');
+  const z = d.qty===0 ? 'zero' : '';
+  const pillClass = d.qty===maxQty && maxQty>0 ? 'pill spike' : 'pill';
+  tr.innerHTML = `
+    <td>${d.day}</td>
+    <td class="${z}">${d.qty>0?`<span class="${pillClass}">${d.qty}</span>`:'-'}</td>
+    <td class="${z}">${d.qty>0? (d.qty/2)+' ຄູ່':'-'}</td>
+    <td class="${z}">${d.tx||'-'}</td>
+    <td class="${z}">${d.total? fmt(d.total):'-'}</td>`;
+  tbody.appendChild(tr);
+});
+
+const labels = data.map(d=>d.day);
+const berry = '#C75B7A', deep='#9E3F5A', plum='#5C2A3A', pistachio='#9CB87A';
+
+new Chart(document.getElementById('usageChart'), {
+  type:'bar',
+  data:{labels, datasets:[
+    {label:'ຈຳນວນຖ້ວຍ', data:data.map(d=>d.qty),
+      backgroundColor: data.map(d=> d.qty===maxQty && maxQty>0 ? pistachio : berry),
+      borderRadius:6, maxBarThickness:30}
+  ]},
+  options:{responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{ y:{beginAtZero:true, ticks:{stepSize:4, color:'#a87487'}, grid:{color:'#F6E2E8'}},
+             x:{title:{display:true,text:'ວັນ (ມິຖຸນາ)',color:'#a87487'}, grid:{display:false}, ticks:{color:'#a87487'}}}
+  }
+});
+
+new Chart(document.getElementById('salesChart'), {
+  type:'line',
+  data:{labels, datasets:[{label:'ຍອດຂາຍລວມ', data:data.map(d=>d.total),
+    borderColor:deep, backgroundColor:'rgba(158,63,90,0.14)', fill:true, tension:.35,
+    pointBackgroundColor:plum, pointRadius:4}]},
+  options:{responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{ y:{beginAtZero:true, ticks:{color:'#a87487', callback:v=>fmt(v)}, grid:{color:'#F6E2E8'}},
+             x:{title:{display:true,text:'ວັນ (ມິຖຸນາ)',color:'#a87487'}, grid:{display:false}, ticks:{color:'#a87487'}}}
+  }
+});
+</script>
+</body>
+</html>
